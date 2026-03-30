@@ -3,97 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مصنع حيدر | النسخة الآمنة</title>
+    <title>Slink | مختصر الروابط الذكي</title>
     <style>
-        :root { --bg: #050505; --gold: #ffcc00; --card: #111; --text: #e0e0e0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; justify-content: center; }
-        .panel { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid rgba(255, 204, 0, 0.3); box-shadow: 0 0 20px #000; }
-        h2 { color: var(--gold); margin-bottom: 20px; text-align: center; }
-        .label { display: block; font-size: 11px; color: var(--gold); margin-bottom: 5px; text-align: right; opacity: 0.8; }
-        input, textarea { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 12px; margin-bottom: 15px; border-radius: 8px; outline: none; direction: ltr; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #b8860b, #ffcc00); border: none; border-radius: 8px; font-weight: bold; color: #000; cursor: pointer; transition: 0.3s; }
-        button:hover { transform: scale(1.01); filter: brightness(1.1); }
-        #status { margin-top: 15px; font-size: 0.85rem; text-align: center; }
-        .link-output { color: #00ff00; text-decoration: underline; margin-top: 10px; display: block; background: rgba(0, 255, 0, 0.1); padding: 10px; border-radius: 5px; }
-        .reset-link { font-size: 10px; color: #ff4444; cursor: pointer; text-decoration: underline; display: block; margin-top: 10px; }
+        /* --- المتغيرات والتنسيق العام --- */
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #ec4899;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --error: #ef4444;
+            --success: #10b981;
+            --grad: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- الأنميشن (التحريك) --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- الهيكل الرئيسي --- */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: var(--grad);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        header p {
+            color: var(--text-dim);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        /* --- بطاقة الإدخال --- */
+        .card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+            text-align: left; /* الروابط تُكتب دائماً من اليسار */
+            direction: ltr;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        button {
+            padding: 15px;
+            border-radius: 15px;
+            border: none;
+            background: var(--grad);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+            box-shadow: 0 15px 20px -5px rgba(236, 72, 153, 0.5);
+        }
+
+        button:active { transform: translateY(0); }
+
+        /* --- منطقة النتائج --- */
+        #result-section {
+            margin-top: 25px;
+            display: none;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .result-label {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .result-box {
+            display: flex;
+            align-items: center;
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 12px;
+            gap: 10px;
+            direction: ltr; /* لعرض الرابط بشكل صحيح */
+        }
+
+        #short-url {
+            flex: 1;
+            color: var(--accent-primary);
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .copy-btn {
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: none;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: none;
+        }
+
+        /* --- حالة التحميل والخطأ --- */
+        .loader {
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-secondary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 15px auto;
+        }
+
+        .error-text {
+            color: var(--error);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* --- التذييل --- */
+        footer {
+            margin-top: 40px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        footer b {
+            color: var(--accent-secondary);
+        }
+
+        /* --- استجابة الهواتف --- */
+        @media (max-width: 480px) {
+            header h1 { font-size: 2.2rem; }
+            .card { padding: 1.5rem; }
+        }
     </style>
 </head>
 <body>
 
-<div class="panel">
-    <h2>⚜️ مصنع حيدر PRO (النسخة الآمنة)</h2>
-    
-    <span class="label">اسم المستودع:</span>
-    <input type="text" id="repo-name" value="Haider-x31/my-api">
+    <div class="container">
+        <header>
+            <h1>🔗 سلينك</h1>
+            <p>اختصر روابطك الطويلة بلمسة عصرية</p>
+        </header>
 
-    <span class="label">اسم الملف:</span>
-    <input type="text" id="file-name" value="index.html">
-    
-    <span class="label">كود الـ HTML:</span>
-    <textarea id="code-content" placeholder="ألصق كود الـ HTML هنا..."></textarea>
-    
-    <button onclick="pushToGitHub()">🚀 تحويل ونشر الرابط</button>
-    
-    <div id="status"></div>
-    <span class="reset-link" onclick="resetToken()">حذف التوكن المحفوظ وتغييره</span>
-</div>
+        <main class="card">
+            <div class="input-group">
+                <input type="text" id="long-url" placeholder="ضع الرابط الطويل هنا..." autocomplete="off">
+                <button id="shorten-btn" onclick="generateShortUrl()">اختصر الآن</button>
+            </div>
 
-<script>
-    // وظيفة لجلب التوكن أو طلبه من المستخدم وحفظه في الذاكرة المحلية
-    function getToken() {
-        let token = localStorage.getItem('haider_gh_token');
-        if (!token || token === "null") {
-            token = prompt("يرجى إدخال GitHub Token الجديد (ghp_...):");
-            if (token) localStorage.setItem('haider_gh_token', token);
-        }
-        return token;
-    }
+            <div id="loader" class="loader"></div>
+            <p id="error-msg" class="error-text">عذراً، يرجى إدخال رابط صحيح!</p>
 
-    function resetToken() {
-        localStorage.removeItem('haider_gh_token');
-        alert("تم حذف التوكن. سيتم طلب توكن جديد عند المحاولة القادمة.");
-    }
+            <div id="result-section">
+                <span class="result-label">رابطك المختصر جاهز:</span>
+                <div class="result-box">
+                    <span id="short-url"></span>
+                    <button class="copy-btn" id="copy-btn" onclick="copyLink()">نسخ</button>
+                </div>
+            </div>
+        </main>
 
-    async function pushToGitHub() {
-        const token = getToken();
-        if (!token) return alert("يجب إدخال التوكن للعمل!");
+        <footer>
+            بواسطة <b>Gemini</b> &copy; 2026
+        </footer>
+    </div>
 
-        const repo = document.getElementById('repo-name').value.trim();
-        const fileName = document.getElementById('file-name').value.trim();
-        const content = document.getElementById('code-content').value;
-        const status = document.getElementById('status');
-
-        if (!content) return alert("ألصق الكود أولاً!");
-
-        status.innerHTML = "<b style='color:var(--gold);'>⏳ جاري الرفع...</b>";
-
-        try {
-            const encodedContent = btoa(unescape(encodeURIComponent(content)));
-            const url = `https://api.github.com/repos/${repo}/contents/${fileName}`;
-            
-            let sha = "";
-            const getFile = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-            if (getFile.ok) { sha = (await getFile.json()).sha; }
-
-            const response = await fetch(url, {
-                method: "PUT",
-                headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ message: "Upload via Safe Haider Factory", content: encodedContent, sha: sha })
-            });
-
-            if (response.ok) {
-                const liveLink = `https://${repo.split('/')[0]}.github.io/${repo.split('/')[1]}/${fileName}`;
-                status.innerHTML = `<b style='color:#00ff00;'>✅ تم النشر!</b><br><a href="${liveLink}" target="_blank" class="link-output">${liveLink}</a>`;
-            } else {
-                const err = await response.json();
-                if(err.message === "Bad credentials") {
-                    status.innerHTML = "<b style='color:red;'>❌ التوكن محروق أو خطأ! اضغط 'حذف التوكن' بالأسفل واستخدم واحداً جديداً.</b>";
-                } else {
-                    status.innerHTML = "<b style='color:red;'>❌ خطأ: " + err.message + "</b>";
-                }
+    <script>
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (_) {
+                return false;
             }
-        } catch (error) { status.innerHTML = "<b style='color:red;'>❌ خطأ اتصال</b>"; }
-    }
-</script>
+        }
+
+        async function generateShortUrl() {
+            const urlInput = document.getElementById('long-url').value.trim();
+            const btn = document.getElementById('shorten-btn');
+            const loader = document.getElementById('loader');
+            const errorMsg = document.getElementById('error-msg');
+            const resultSection = document.getElementById('result-section');
+            const shortUrlSpan = document.getElementById('short-url');
+
+            // إعادة ضبط الواجهة
+            errorMsg.style.display = 'none';
+            resultSection.style.display = 'none';
+
+            // التحقق من المدخلات
+            if (!urlInput || !isValidUrl(urlInput)) {
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // بدء التحميل
+            btn.disabled = true;
+            loader.style.display = 'block';
+
+            // محاكاة تأخير بسيط للجمالية
+            await new Promise(r => setTimeout(r, 1000));
+
+            // منطق التشفير (محاكاة بدون قاعدة بيانات)
+            // نستخدم Base64 ونأخذ أول 7 رموز كمعرف فريد
+            const hash = btoa(urlInput).substring(0, 7);
+            const finalShortUrl = "https://slink.ly/" + hash;
+
+            // عرض النتيجة
+            loader.style.display = 'none';
+            btn.disabled = false;
+            shortUrlSpan.innerText = finalShortUrl;
+            resultSection.style.display = 'block';
+        }
+
+        function copyLink() {
+            const text = document.getElementById('short-url').innerText;
+            const copyBtn = document.getElementById('copy-btn');
+
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = "تم النسخ!";
+                copyBtn.style.color = "var(--success)";
+                copyBtn.style.borderColor = "var(--success)";
+
+                setTimeout(() => {
+                    copyBtn.innerText = originalText;
+                    copyBtn.style.color = "var(--accent-primary)";
+                    copyBtn.style.borderColor = "var(--accent-primary)";
+                }, 2000);
+            });
+        }
+
+        // تفعيل الزر عند الضغط على Enter
+        document.getElementById('long-url').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') generateShortUrl();
+        });
+    </script>
 </body>
 </html>
