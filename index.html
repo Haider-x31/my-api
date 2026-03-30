@@ -3,150 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Push to GitHub | الرفع التلقائي</title>
+    <title>مصنع حيدر | النسخة الآمنة</title>
     <style>
-        :root {
-            --bg: #050505;
-            --gold: #ffcc00;
-            --card: #111;
-            --text: #e0e0e0;
-        }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .panel {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card);
-            padding: 25px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 204, 0, 0.3);
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-        }
+        :root { --bg: #050505; --gold: #ffcc00; --card: #111; --text: #e0e0e0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; justify-content: center; }
+        .panel { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid rgba(255, 204, 0, 0.3); box-shadow: 0 0 20px #000; }
         h2 { color: var(--gold); margin-bottom: 20px; text-align: center; }
-        input, textarea {
-            width: 100%;
-            background: #000;
-            border: 1px solid #333;
-            color: var(--gold);
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            outline: none;
-            direction: ltr;
-        }
-        textarea { height: 150px; font-family: monospace; }
-        button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(45deg, #b8860b, #ffcc00);
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        button:hover { transform: scale(1.02); brightness: 1.1; }
-        #status {
-            margin-top: 15px;
-            font-size: 0.85rem;
-            text-align: center;
-            word-break: break-all;
-        }
-        .link-output {
-            color: #00ff00;
-            text-decoration: underline;
-            margin-top: 10px;
-            display: block;
-        }
+        .label { display: block; font-size: 11px; color: var(--gold); margin-bottom: 5px; text-align: right; opacity: 0.8; }
+        input, textarea { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 12px; margin-bottom: 15px; border-radius: 8px; outline: none; direction: ltr; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #b8860b, #ffcc00); border: none; border-radius: 8px; font-weight: bold; color: #000; cursor: pointer; transition: 0.3s; }
+        button:hover { transform: scale(1.01); filter: brightness(1.1); }
+        #status { margin-top: 15px; font-size: 0.85rem; text-align: center; }
+        .link-output { color: #00ff00; text-decoration: underline; margin-top: 10px; display: block; background: rgba(0, 255, 0, 0.1); padding: 10px; border-radius: 5px; }
+        .reset-link { font-size: 10px; color: #ff4444; cursor: pointer; text-decoration: underline; display: block; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="panel">
-    <h2>الرفع التلقائي لـ GitHub 🚀</h2>
+    <h2>⚜️ مصنع حيدر PRO (النسخة الآمنة)</h2>
     
-    <input type="password" id="github-token" placeholder="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">
-    <input type="text" id="repo-name" placeholder="اسم المستخدم/المستودع (مثلاً: haider/my-site)">
-    <input type="text" id="file-name" placeholder="index.html">
+    <span class="label">اسم المستودع:</span>
+    <input type="text" id="repo-name" value="Haider-x31/my-api">
+
+    <span class="label">اسم الملف:</span>
+    <input type="text" id="file-name" value="index.html">
     
-    <p style="font-size: 0.8rem; color: var(--gold); margin-bottom: 5px;">محتوى الكود:</p>
-    <textarea id="code-content" placeholder="ألصق الكود الذي تريد تحويله لرابط هنا..."></textarea>
+    <span class="label">كود الـ HTML:</span>
+    <textarea id="code-content" placeholder="ألصق كود الـ HTML هنا..."></textarea>
     
-    <button onclick="pushToGitHub()">تحويل إلى رابط ورفع</button>
+    <button onclick="pushToGitHub()">🚀 تحويل ونشر الرابط</button>
     
     <div id="status"></div>
+    <span class="reset-link" onclick="resetToken()">حذف التوكن المحفوظ وتغييره</span>
 </div>
 
 <script>
+    // وظيفة لجلب التوكن أو طلبه من المستخدم وحفظه في الذاكرة المحلية
+    function getToken() {
+        let token = localStorage.getItem('haider_gh_token');
+        if (!token || token === "null") {
+            token = prompt("يرجى إدخال GitHub Token الجديد (ghp_...):");
+            if (token) localStorage.setItem('haider_gh_token', token);
+        }
+        return token;
+    }
+
+    function resetToken() {
+        localStorage.removeItem('haider_gh_token');
+        alert("تم حذف التوكن. سيتم طلب توكن جديد عند المحاولة القادمة.");
+    }
+
     async function pushToGitHub() {
-        const token = document.getElementById('github-token').value;
-        const repo = document.getElementById('repo-name').value;
-        const fileName = document.getElementById('file-name').value;
+        const token = getToken();
+        if (!token) return alert("يجب إدخال التوكن للعمل!");
+
+        const repo = document.getElementById('repo-name').value.trim();
+        const fileName = document.getElementById('file-name').value.trim();
         const content = document.getElementById('code-content').value;
         const status = document.getElementById('status');
 
-        if (!token || !repo || !fileName || !content) {
-            status.innerHTML = "❌ يرجى ملء جميع الحقول";
-            return;
-        }
+        if (!content) return alert("ألصق الكود أولاً!");
 
-        status.innerHTML = "⏳ جاري الرفع... انتظر قليلاً";
+        status.innerHTML = "<b style='color:var(--gold);'>⏳ جاري الرفع...</b>";
 
         try {
-            // تحويل الكود إلى Base64 لأن GitHub API يطلب ذلك
             const encodedContent = btoa(unescape(encodeURIComponent(content)));
-
             const url = `https://api.github.com/repos/${repo}/contents/${fileName}`;
             
-            // محاولة جلب الملف أولاً للحصول على الـ SHA (في حال كان الملف موجوداً للتحديث)
             let sha = "";
-            const getFile = await fetch(url, {
-                headers: { "Authorization": `token ${token}` }
-            });
-            if (getFile.ok) {
-                const fileData = await getFile.json();
-                sha = fileData.sha;
-            }
+            const getFile = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+            if (getFile.ok) { sha = (await getFile.json()).sha; }
 
-            // عملية الرفع (إنشاء أو تحديث)
             const response = await fetch(url, {
                 method: "PUT",
-                headers: {
-                    "Authorization": `token ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    message: "تم الرفع تلقائياً عبر Spck Editor",
-                    content: encodedContent,
-                    sha: sha // مطلوب فقط إذا كنت تحدث ملف موجود
-                })
+                headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ message: "Upload via Safe Haider Factory", content: encodedContent, sha: sha })
             });
 
             if (response.ok) {
-                const user = repo.split('/')[0];
-                const repoOnly = repo.split('/')[1];
-                const liveLink = `https://${user}.github.io/${repoOnly}/${fileName}`;
-                
-                status.innerHTML = `✅ تم الرفع بنجاح!<br>
-                رابط الكود المباشر:<br>
-                <a href="${liveLink}" target="_blank" class="link-output">${liveLink}</a>`;
+                const liveLink = `https://${repo.split('/')[0]}.github.io/${repo.split('/')[1]}/${fileName}`;
+                status.innerHTML = `<b style='color:#00ff00;'>✅ تم النشر!</b><br><a href="${liveLink}" target="_blank" class="link-output">${liveLink}</a>`;
             } else {
                 const err = await response.json();
-                status.innerHTML = "❌ خطأ: " + err.message;
+                if(err.message === "Bad credentials") {
+                    status.innerHTML = "<b style='color:red;'>❌ التوكن محروق أو خطأ! اضغط 'حذف التوكن' بالأسفل واستخدم واحداً جديداً.</b>";
+                } else {
+                    status.innerHTML = "<b style='color:red;'>❌ خطأ: " + err.message + "</b>";
+                }
             }
-
-        } catch (error) {
-            status.innerHTML = "❌ حدث خطأ غير متوقع: " + error.message;
-        }
+        } catch (error) { status.innerHTML = "<b style='color:red;'>❌ خطأ اتصال</b>"; }
     }
 </script>
-
 </body>
 </html>
-
