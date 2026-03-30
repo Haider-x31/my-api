@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💡 مولد الأفكار</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+margin:0;
+font-family:'Cairo',sans-serif;
+background:#050505;
+color:#fff;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+width:90%;
+max-width:500px;
+}
+
+.card{
+background:rgba(255,255,255,0.05);
+border-radius:20px;
+padding:20px;
+backdrop-filter:blur(15px);
+box-shadow:0 0 30px rgba(0,255,200,0.2);
+text-align:center;
+animation:fade 1s ease;
+}
+
+h1{
+margin-bottom:10px;
+color:#00ffd5;
+}
+
+.idea{
+margin:20px 0;
+padding:15px;
+background:#111;
+border-radius:15px;
+min-height:80px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+button{
+background:#00ffd5;
+border:none;
+padding:12px;
+width:100%;
+border-radius:12px;
+margin-top:10px;
+cursor:pointer;
+font-size:16px;
+transition:0.3s;
+}
+
+button:hover{
+box-shadow:0 0 15px #00ffd5;
+transform:scale(1.05);
+}
+
+.history{
+margin-top:15px;
+text-align:right;
+max-height:150px;
+overflow:auto;
+}
+
+.item{
+background:#111;
+padding:8px;
+margin-top:5px;
+border-radius:8px;
+font-size:14px;
+}
+
+.copy{
+background:#333;
+margin-top:5px;
+}
+
+@keyframes fade{
+from{opacity:0;transform:translateY(20px);}
+to{opacity:1;transform:translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="card">
+
+<h1>💡 مولد أفكار مشاريع</h1>
+
+<div class="idea" id="idea">اضغط الزر لتوليد فكرة 🚀</div>
+
+<button onclick="generate()">✨ فكرة جديدة</button>
+<button onclick="save()">💾 حفظ الفكرة</button>
+<button onclick="copy()">📋 نسخ</button>
+
+<div class="history" id="history"></div>
+
+</div>
+</div>
+
+<script>
+
+const ideas = [
+"موقع اختصار روابط بذكاء اصطناعي 🤖",
+"تطبيق دردشة بدون إنترنت 📡",
+"موقع تحميل فيديوهات بدون علامة مائية 🎬",
+"لوحة تحكم لإدارة بوت تيليجرام 🤖",
+"موقع تحويل الصور إلى كرتون 🎨",
+"مولد كلمات مرور قوي 🔐",
+"موقع نشر صفحات HTML مباشرة 🚀",
+"تطبيق تتبع العادات اليومية 📊",
+"موقع بيع خدمات مصغرة 💰",
+"AI يكتب لك أكواد جاهزة 💻"
+];
+
+function generate(){
+let idea = ideas[Math.floor(Math.random()*ideas.length)];
+document.getElementById("idea").innerText = idea;
+}
+
+function save(){
+let idea = document.getElementById("idea").innerText;
+if(!idea) return;
+
+let history = JSON.parse(localStorage.getItem("ideas") || "[]");
+history.unshift(idea);
+history = history.slice(0,5);
+
+localStorage.setItem("ideas",JSON.stringify(history));
+loadHistory();
+}
+
+function loadHistory(){
+let history = JSON.parse(localStorage.getItem("ideas") || "[]");
+let box = document.getElementById("history");
+box.innerHTML="";
+
+history.forEach(i=>{
+box.innerHTML += `<div class="item">${i}</div>`;
+});
+}
+
+function copy(){
+let text = document.getElementById("idea").innerText;
+navigator.clipboard.writeText(text);
+alert("تم النسخ ✅");
+}
+
+loadHistory();
+
+</script>
+
+</body>
+</html>
