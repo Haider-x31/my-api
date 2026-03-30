@@ -1,316 +1,168 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slink | مختصر الروابط الذكي</title>
-    <style>
-        /* --- المتغيرات والتنسيق العام --- */
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-primary: #8b5cf6;
-            --accent-secondary: #ec4899;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --error: #ef4444;
-            --success: #10b981;
-            --grad: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💡 مولد الأفكار</title>
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+<style>
+body{
+margin:0;
+font-family:'Cairo',sans-serif;
+background:#050505;
+color:#fff;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
 
-        /* --- الأنميشن (التحريك) --- */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+.container{
+width:90%;
+max-width:500px;
+}
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+.card{
+background:rgba(255,255,255,0.05);
+border-radius:20px;
+padding:20px;
+backdrop-filter:blur(15px);
+box-shadow:0 0 30px rgba(0,255,200,0.2);
+text-align:center;
+animation:fade 1s ease;
+}
 
-        /* --- الهيكل الرئيسي --- */
-        .container {
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-            animation: fadeInUp 0.8s ease-out forwards;
-        }
+h1{
+margin-bottom:10px;
+color:#00ffd5;
+}
 
-        header h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            background: var(--grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
+.idea{
+margin:20px 0;
+padding:15px;
+background:#111;
+border-radius:15px;
+min-height:80px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
 
-        header p {
-            color: var(--text-dim);
-            margin-bottom: 30px;
-            font-size: 1.1rem;
-        }
+button{
+background:#00ffd5;
+border:none;
+padding:12px;
+width:100%;
+border-radius:12px;
+margin-top:10px;
+cursor:pointer;
+font-size:16px;
+transition:0.3s;
+}
 
-        /* --- بطاقة الإدخال --- */
-        .card {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            position: relative;
-        }
+button:hover{
+box-shadow:0 0 15px #00ffd5;
+transform:scale(1.05);
+}
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+.history{
+margin-top:15px;
+text-align:right;
+max-height:150px;
+overflow:auto;
+}
 
-        input {
-            width: 100%;
-            padding: 15px 20px;
-            border-radius: 15px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-size: 1rem;
-            text-align: left; /* الروابط تُكتب دائماً من اليسار */
-            direction: ltr;
-            transition: all 0.3s ease;
-            outline: none;
-        }
+.item{
+background:#111;
+padding:8px;
+margin-top:5px;
+border-radius:8px;
+font-size:14px;
+}
 
-        input:focus {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
-        }
+.copy{
+background:#333;
+margin-top:5px;
+}
 
-        button {
-            padding: 15px;
-            border-radius: 15px;
-            border: none;
-            background: var(--grad);
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 15px -3px rgba(236, 72, 153, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-3px);
-            filter: brightness(1.1);
-            box-shadow: 0 15px 20px -5px rgba(236, 72, 153, 0.5);
-        }
-
-        button:active { transform: translateY(0); }
-
-        /* --- منطقة النتائج --- */
-        #result-section {
-            margin-top: 25px;
-            display: none;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .result-label {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .result-box {
-            display: flex;
-            align-items: center;
-            background: #0f172a;
-            padding: 12px;
-            border-radius: 12px;
-            gap: 10px;
-            direction: ltr; /* لعرض الرابط بشكل صحيح */
-        }
-
-        #short-url {
-            flex: 1;
-            color: var(--accent-primary);
-            font-weight: 600;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .copy-btn {
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid var(--accent-primary);
-            color: var(--accent-primary);
-            box-shadow: none;
-        }
-
-        .copy-btn:hover {
-            background: var(--accent-primary);
-            color: white;
-            box-shadow: none;
-        }
-
-        /* --- حالة التحميل والخطأ --- */
-        .loader {
-            display: none;
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent-secondary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 15px auto;
-        }
-
-        .error-text {
-            color: var(--error);
-            font-size: 0.9rem;
-            margin-top: 10px;
-            display: none;
-        }
-
-        /* --- التذييل --- */
-        footer {
-            margin-top: 40px;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-        }
-
-        footer b {
-            color: var(--accent-secondary);
-        }
-
-        /* --- استجابة الهواتف --- */
-        @media (max-width: 480px) {
-            header h1 { font-size: 2.2rem; }
-            .card { padding: 1.5rem; }
-        }
-    </style>
+@keyframes fade{
+from{opacity:0;transform:translateY(20px);}
+to{opacity:1;transform:translateY(0);}
+}
+</style>
 </head>
+
 <body>
 
-    <div class="container">
-        <header>
-            <h1>🔗 سلينك</h1>
-            <p>اختصر روابطك الطويلة بلمسة عصرية</p>
-        </header>
+<div class="container">
+<div class="card">
 
-        <main class="card">
-            <div class="input-group">
-                <input type="text" id="long-url" placeholder="ضع الرابط الطويل هنا..." autocomplete="off">
-                <button id="shorten-btn" onclick="generateShortUrl()">اختصر الآن</button>
-            </div>
+<h1>💡 مولد أفكار مشاريع</h1>
 
-            <div id="loader" class="loader"></div>
-            <p id="error-msg" class="error-text">عذراً، يرجى إدخال رابط صحيح!</p>
+<div class="idea" id="idea">اضغط الزر لتوليد فكرة 🚀</div>
 
-            <div id="result-section">
-                <span class="result-label">رابطك المختصر جاهز:</span>
-                <div class="result-box">
-                    <span id="short-url"></span>
-                    <button class="copy-btn" id="copy-btn" onclick="copyLink()">نسخ</button>
-                </div>
-            </div>
-        </main>
+<button onclick="generate()">✨ فكرة جديدة</button>
+<button onclick="save()">💾 حفظ الفكرة</button>
+<button onclick="copy()">📋 نسخ</button>
 
-        <footer>
-            بواسطة <b>Gemini</b> &copy; 2026
-        </footer>
-    </div>
+<div class="history" id="history"></div>
 
-    <script>
-        function isValidUrl(url) {
-            try {
-                new URL(url);
-                return true;
-            } catch (_) {
-                return false;
-            }
-        }
+</div>
+</div>
 
-        async function generateShortUrl() {
-            const urlInput = document.getElementById('long-url').value.trim();
-            const btn = document.getElementById('shorten-btn');
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('error-msg');
-            const resultSection = document.getElementById('result-section');
-            const shortUrlSpan = document.getElementById('short-url');
+<script>
 
-            // إعادة ضبط الواجهة
-            errorMsg.style.display = 'none';
-            resultSection.style.display = 'none';
+const ideas = [
+"موقع اختصار روابط بذكاء اصطناعي 🤖",
+"تطبيق دردشة بدون إنترنت 📡",
+"موقع تحميل فيديوهات بدون علامة مائية 🎬",
+"لوحة تحكم لإدارة بوت تيليجرام 🤖",
+"موقع تحويل الصور إلى كرتون 🎨",
+"مولد كلمات مرور قوي 🔐",
+"موقع نشر صفحات HTML مباشرة 🚀",
+"تطبيق تتبع العادات اليومية 📊",
+"موقع بيع خدمات مصغرة 💰",
+"AI يكتب لك أكواد جاهزة 💻"
+];
 
-            // التحقق من المدخلات
-            if (!urlInput || !isValidUrl(urlInput)) {
-                errorMsg.style.display = 'block';
-                return;
-            }
+function generate(){
+let idea = ideas[Math.floor(Math.random()*ideas.length)];
+document.getElementById("idea").innerText = idea;
+}
 
-            // بدء التحميل
-            btn.disabled = true;
-            loader.style.display = 'block';
+function save(){
+let idea = document.getElementById("idea").innerText;
+if(!idea) return;
 
-            // محاكاة تأخير بسيط للجمالية
-            await new Promise(r => setTimeout(r, 1000));
+let history = JSON.parse(localStorage.getItem("ideas") || "[]");
+history.unshift(idea);
+history = history.slice(0,5);
 
-            // منطق التشفير (محاكاة بدون قاعدة بيانات)
-            // نستخدم Base64 ونأخذ أول 7 رموز كمعرف فريد
-            const hash = btoa(urlInput).substring(0, 7);
-            const finalShortUrl = "https://slink.ly/" + hash;
+localStorage.setItem("ideas",JSON.stringify(history));
+loadHistory();
+}
 
-            // عرض النتيجة
-            loader.style.display = 'none';
-            btn.disabled = false;
-            shortUrlSpan.innerText = finalShortUrl;
-            resultSection.style.display = 'block';
-        }
+function loadHistory(){
+let history = JSON.parse(localStorage.getItem("ideas") || "[]");
+let box = document.getElementById("history");
+box.innerHTML="";
 
-        function copyLink() {
-            const text = document.getElementById('short-url').innerText;
-            const copyBtn = document.getElementById('copy-btn');
+history.forEach(i=>{
+box.innerHTML += `<div class="item">${i}</div>`;
+});
+}
 
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = copyBtn.innerText;
-                copyBtn.innerText = "تم النسخ!";
-                copyBtn.style.color = "var(--success)";
-                copyBtn.style.borderColor = "var(--success)";
+function copy(){
+let text = document.getElementById("idea").innerText;
+navigator.clipboard.writeText(text);
+alert("تم النسخ ✅");
+}
 
-                setTimeout(() => {
-                    copyBtn.innerText = originalText;
-                    copyBtn.style.color = "var(--accent-primary)";
-                    copyBtn.style.borderColor = "var(--accent-primary)";
-                }, 2000);
-            });
-        }
+loadHistory();
 
-        // تفعيل الزر عند الضغط على Enter
-        document.getElementById('long-url').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') generateShortUrl();
-        });
-    </script>
+</script>
+
 </body>
 </html>
