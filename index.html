@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Push to GitHub | الرفع التلقائي</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --gold: #ffcc00;
+            --card: #111;
+            --text: #e0e0e0;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .panel {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        h2 { color: var(--gold); margin-bottom: 20px; text-align: center; }
+        input, textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
+            color: var(--gold);
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            outline: none;
+            direction: ltr;
+        }
+        textarea { height: 150px; font-family: monospace; }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #b8860b, #ffcc00);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { transform: scale(1.02); brightness: 1.1; }
+        #status {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            text-align: center;
+            word-break: break-all;
+        }
+        .link-output {
+            color: #00ff00;
+            text-decoration: underline;
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <h2>الرفع التلقائي لـ GitHub 🚀</h2>
+    
+    <input type="password" id="github-token" placeholder="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">
+    <input type="text" id="repo-name" placeholder="اسم المستخدم/المستودع (مثلاً: haider/my-site)">
+    <input type="text" id="file-name" placeholder="index.html">
+    
+    <p style="font-size: 0.8rem; color: var(--gold); margin-bottom: 5px;">محتوى الكود:</p>
+    <textarea id="code-content" placeholder="ألصق الكود الذي تريد تحويله لرابط هنا..."></textarea>
+    
+    <button onclick="pushToGitHub()">تحويل إلى رابط ورفع</button>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    async function pushToGitHub() {
+        const token = document.getElementById('github-token').value;
+        const repo = document.getElementById('repo-name').value;
+        const fileName = document.getElementById('file-name').value;
+        const content = document.getElementById('code-content').value;
+        const status = document.getElementById('status');
+
+        if (!token || !repo || !fileName || !content) {
+            status.innerHTML = "❌ يرجى ملء جميع الحقول";
+            return;
+        }
+
+        status.innerHTML = "⏳ جاري الرفع... انتظر قليلاً";
+
+        try {
+            // تحويل الكود إلى Base64 لأن GitHub API يطلب ذلك
+            const encodedContent = btoa(unescape(encodeURIComponent(content)));
+
+            const url = `https://api.github.com/repos/${repo}/contents/${fileName}`;
+            
+            // محاولة جلب الملف أولاً للحصول على الـ SHA (في حال كان الملف موجوداً للتحديث)
+            let sha = "";
+            const getFile = await fetch(url, {
+                headers: { "Authorization": `token ${token}` }
+            });
+            if (getFile.ok) {
+                const fileData = await getFile.json();
+                sha = fileData.sha;
+            }
+
+            // عملية الرفع (إنشاء أو تحديث)
+            const response = await fetch(url, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: "تم الرفع تلقائياً عبر Spck Editor",
+                    content: encodedContent,
+                    sha: sha // مطلوب فقط إذا كنت تحدث ملف موجود
+                })
+            });
+
+            if (response.ok) {
+                const user = repo.split('/')[0];
+                const repoOnly = repo.split('/')[1];
+                const liveLink = `https://${user}.github.io/${repoOnly}/${fileName}`;
+                
+                status.innerHTML = `✅ تم الرفع بنجاح!<br>
+                رابط الكود المباشر:<br>
+                <a href="${liveLink}" target="_blank" class="link-output">${liveLink}</a>`;
+            } else {
+                const err = await response.json();
+                status.innerHTML = "❌ خطأ: " + err.message;
+            }
+
+        } catch (error) {
+            status.innerHTML = "❌ حدث خطأ غير متوقع: " + error.message;
+        }
+    }
+</script>
+
+</body>
+</html>
+
