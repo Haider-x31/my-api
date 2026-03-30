@@ -1,181 +1,114 @@
-import asyncio
-import random
-import datetime
-import aiosqlite
 import os
+import asyncio
+import sqlite3
+import random
+import hashlib
+from datetime import datetime
+from aiogram import Bot, Dispatcher, F, types
+from aiogram.filters import Command, CommandObject
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.utils.token import TokenValidationError
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import CommandStart
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from dotenv import load_dotenv
-
-load_dotenv()
-
-TOKEN = os.getenv("8686945908:AAFW7CFWmqkZy-qrMQQ4bBqHG4EpFWqIYRM")
-ADMIN_ID = int(os.getenv("5022700372", "0"))
-
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
-
-DB_NAME = "bot.db"
-
-# ---------------- DATABASE ----------------
-
-async def init_db():
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            name TEXT,
-            points INTEGER DEFAULT 0,
-            invites INTEGER DEFAULT 0,
-            level INTEGER DEFAULT 1,
-            vip INTEGER DEFAULT 0,
-            last_spin TEXT,
-            banned INTEGER DEFAULT 0
-        )
-        """)
-        await db.execute("""
-        CREATE TABLE IF NOT EXISTS videos (
-            url TEXT PRIMARY KEY
-        )
-        """)
-        await db.commit()
-
-async def get_user(user_id):
-    async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-        return await cur.fetchone()
-
-async def add_user(user_id, name):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("INSERT OR IGNORE INTO users(user_id,name) VALUES(?,?)", (user_id,name))
-        await db.commit()
-
-async def update_points(user_id, amount):
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE users SET points = points + ? WHERE user_id=?", (amount, user_id))
-        await db.commit()
-
-# ---------------- START ----------------
-
-@dp.message(CommandStart())
-async def start(msg: Message):
-    user_id = msg.from_user.id
-    name = msg.from_user.first_name
-
-    await add_user(user_id, name)
-
-    kb = InlineKeyboardBuilder()
-    kb.button(text="📊 بياناتي", callback_data="me")
-    kb.button(text="🎯 عجلة الحظ", callback_data="spin")
-    kb.button(text="👑 VIP", callback_data="vip")
-    kb.adjust(2)
-
-    await msg.answer("🔥 أهلاً بك في البوت الخارق", reply_markup=kb.as_markup())
-
-# ---------------- PROFILE ----------------
-
-@dp.callback_query(F.data == "me")
-async def profile(call: CallbackQuery):
-    user = await get_user(call.from_user.id)
-
-    text = f"""
-📊 بياناتك:
-
-💰 النقاط: {user[2]}
-👥 الدعوات: {user[3]}
-📈 المستوى: {user[4]}
-👑 VIP: {'نعم' if user[5] else 'لا'}
-    """
-
-    await call.message.answer(text)
-
-# ---------------- SPIN ----------------
-
-@dp.callback_query(F.data == "spin")
-async def spin(call: CallbackQuery):
-    user = await get_user(call.from_user.id)
-
-    today = str(datetime.date.today())
-
-    if user[6] == today:
-        return await call.answer("❌ استخدمت اليوم", show_alert=True)
-
-    rand = random.random()
-
-    if rand < 0.95:
-        reward = 1
-    elif rand < 0.99:
-        reward = 2
-    else:
-        reward = 3
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE users SET last_spin=? WHERE user_id=?", (today, call.from_user.id))
-        await db.commit()
-
-    await update_points(call.from_user.id, reward)
-
-    await call.message.answer(f"🎯 ربحت {reward} نقطة!")
-
-# ---------------- VIP ----------------
-
+# --- 1. معالجة المتغيرات بأمان (Render & Local) ---
+# نحاول جلب التوكن، إذا لم يوجد نترك المستخدم يضعه يدوياً كحل أخير
+TOKEN = os.environ.get("BOT_TOKEN")
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
 VIP_PRICE = 25
 
-@dp.callback_query(F.data == "vip")
-async def vip(call: CallbackQuery):
-    user = await get_user(call.from_user.id)
+# فحص أمان التوكن
+if not TOKEN or TOKEN == "None":
+    print("❌ خطأ قاتل: لم يتم العثور على BOT_TOKEN في إعدادات Render!")
+    print("💡 تأكد من إضافة BOT_TOKEN في قسم Environment Variables في لوحة تحكم Render.")
+    # لتجربة الكود فوراً إذا فشل Render، يمكنك لصق التوكن هنا مؤقتاً:
+    # TOKEN = "ضع_توكن_بوتك_هنا"
 
-    if user[5]:
-        return await call.answer("أنت VIP بالفعل")
+# --- 2. إعداد البوت والداتابيز ---
+try:
+    bot = Bot(token=TOKEN)
+    dp = Dispatcher()
+except Exception as e:
+    print(f"❌ فشل تشغيل البوت بسبب التوكن: {e}")
 
-    if user[2] < VIP_PRICE:
-        return await call.answer("❌ نقاطك غير كافية", show_alert=True)
+def init_db():
+    conn = sqlite3.connect('bot_pro.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY, username TEXT, points INTEGER DEFAULT 0,
+        is_vip INTEGER DEFAULT 0, referred_by INTEGER, ref_count INTEGER DEFAULT 0,
+        level INTEGER DEFAULT 1, last_wheel DATE, join_date DATE)''')
+    c.execute('CREATE TABLE IF NOT EXISTS downloads (hash TEXT PRIMARY KEY, file_id TEXT)')
+    conn.commit()
+    conn.close()
 
-    async with aiosqlite.connect(DB_NAME) as db:
-        await db.execute("UPDATE users SET vip=1, points=points-? WHERE user_id=?", (VIP_PRICE, call.from_user.id))
-        await db.commit()
+def get_user(user_id):
+    conn = sqlite3.connect('bot_pro.db')
+    conn.row_factory = sqlite3.Row
+    user = conn.execute('SELECT * FROM users WHERE user_id = ?', (user_id,)).fetchone()
+    conn.close()
+    return user
 
-    await call.message.answer("👑 تم تفعيل VIP")
+def add_user(user_id, username, ref_by=None):
+    conn = sqlite3.connect('bot_pro.db')
+    try:
+        conn.execute('INSERT OR IGNORE INTO users (user_id, username, referred_by, join_date) VALUES (?, ?, ?, ?)', 
+                     (user_id, username, ref_by, datetime.now().date()))
+        if ref_by:
+            conn.execute('UPDATE users SET points = points + 1, ref_count = ref_count + 1 WHERE user_id = ?', (ref_by,))
+        conn.commit()
+    except: pass
+    finally: conn.close()
 
-# ---------------- VIDEO ----------------
+# --- 3. الكيبورد والمعالجات ---
+def main_menu(user_id):
+    kb = [
+        [InlineKeyboardButton(text="👤 بياناتي", callback_query_data="profile"),
+         InlineKeyboardButton(text="🎡 عجلة الحظ", callback_query_data="wheel")],
+        [InlineKeyboardButton(text="🔗 رابط الدعوة", callback_query_data="invite"),
+         InlineKeyboardButton(text="⭐ شراء VIP", callback_query_data="buy_vip")]
+    ]
+    if user_id == ADMIN_ID:
+        kb.append([InlineKeyboardButton(text="⚙️ لوحة الأدمن", callback_query_data="admin")])
+    return InlineKeyboardMarkup(inline_keyboard=kb)
 
-@dp.message(F.text)
-async def video(msg: Message):
-    url = msg.text
+@dp.message(Command("start"))
+async def start(message: types.Message, command: CommandObject):
+    user_id = message.from_user.id
+    user = get_user(user_id)
+    if not user:
+        ref_by = int(command.args) if command.args and command.args.isdigit() else None
+        add_user(user_id, message.from_user.username, ref_by)
+    await message.answer(f"أهلاً {message.from_user.first_name}! البوت جاهز لخدمتك.", reply_markup=main_menu(user_id))
 
-    async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute("SELECT * FROM videos WHERE url=?", (url,))
-        exists = await cur.fetchone()
+@dp.callback_query(F.data == "profile")
+async def profile(call: CallbackQuery):
+    u = get_user(call.from_user.id)
+    text = f"📊 نقاطك: {u['points']}\n👥 دعواتك: {u['ref_count']}\n👑 VIP: {'نعم' if u['is_vip'] else 'لا'}"
+    await call.message.edit_text(text, reply_markup=main_menu(call.from_user.id))
 
-        if exists:
-            return await msg.answer("⚠️ هذا الفيديو تم تحميله سابقاً")
+@dp.callback_query(F.data == "wheel")
+async def wheel(call: CallbackQuery):
+    u = get_user(call.from_user.id)
+    today = datetime.now().date().isoformat()
+    if u['last_wheel'] == today:
+        return await call.answer("عد غداً! ❌", show_alert=True)
+    
+    res = random.choices([1, 2, 3], weights=[95, 4, 1], k=1)[0]
+    conn = sqlite3.connect('bot_pro.db')
+    conn.execute('UPDATE users SET points = points + ?, last_wheel = ? WHERE user_id = ?', (res, today, u['user_id']))
+    conn.commit()
+    conn.close()
+    await call.answer(f"مبروك! فزت بـ {res} نقطة 🎡")
 
-        await db.execute("INSERT INTO videos(url) VALUES(?)", (url,))
-        await db.commit()
+@dp.callback_query(F.data == "invite")
+async def invite(call: CallbackQuery):
+    me = await bot.get_me()
+    await call.message.answer(f"🔗 رابطك: https://t.me/{me.username}?start={call.from_user.id}")
 
-    await msg.answer("📥 جاري تحميل الفيديو (وهمي الآن)")
-
-# ---------------- ADMIN ----------------
-
-@dp.message(F.text == "/stats")
-async def stats(msg: Message):
-    if msg.from_user.id != ADMIN_ID:
-        return
-
-    async with aiosqlite.connect(DB_NAME) as db:
-        cur = await db.execute("SELECT COUNT(*) FROM users")
-        users = await cur.fetchone()
-
-    await msg.answer(f"👥 عدد المستخدمين: {users[0]}")
-
-# ---------------- RUN ----------------
-
+# --- 4. تشغيل البوت ---
 async def main():
-    await init_db()
-    print("BOT STARTED 🔥")
+    init_db()
+    if not TOKEN: return # منع التشغيل إذا التوكن مفقود
+    print("✅ البوت يعمل الآن...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
